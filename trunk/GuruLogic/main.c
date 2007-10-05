@@ -7,6 +7,7 @@
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_mixer.h>
 
+#include "game.h"
 #include "level.h"
 #include "types.h"
 #include "defines.h"
@@ -40,52 +41,16 @@ int main (int argc, char *argv[])
 		exit (2);
 	}
 
-	/* Check and open joystick device */
-	if (SDL_NumJoysticks() > 0) {
-		joy = SDL_JoystickOpen(0);
-		if(!joy) {
-			fprintf (stderr, "Couldn't open joystick 0: %s\n", SDL_GetError ());
-		}
-	}
-
 #ifdef WIN32
 	/* Only use Windows code here */
 #endif
 
-    DrawLevel("test.map","blocks.png");
+    /*InitLevel("test.map","blocks.png");
+    RotateRight90();
+    RotateRight90();
+	DrawLevel();*/
 
-	done = 0;
-	while (!done)
-	{
-		SDL_Event event;
-
-		/* Check for events */
-		while (SDL_PollEvent (&event))
-		{
-			switch (event.type)
-			{
-				case SDL_KEYDOWN:
-					/* if press Ctrl + C, terminate program */
-					if ( (event.key.keysym.sym == SDLK_c) && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) )
-						done = 1;
-					break;
-				case SDL_KEYUP:
-					break;
-				case SDL_JOYBUTTONDOWN:
-					/* if press Start button, terminate program */
-					break;
-				case SDL_JOYBUTTONUP:
-					break;
-				case SDL_QUIT:
-					done = 1;
-					break;
-				default:
-					break;
-			}
-		}
-
-		/* Processing */
-	}
+	GameMain();
 
 	return 0;
 }
