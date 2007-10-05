@@ -1,18 +1,18 @@
 # Project: GuruLogic
 # Makefile created by Dev-C++ 4.9.9.2
 
-CPP  = g++.exe
-CC   = gcc.exe
+CPP  = g++.exe -D__DEBUG__
+CC   = gcc.exe -D__DEBUG__
 WINDRES = windres.exe
 RES  = 
-OBJ  = win/main.o win/level.o $(RES)
-LINKOBJ  = win/main.o win/level.o $(RES)
-LIBS =  -L"C:/GP2XSDK/lib" -lmingw32 -liconv -lgp2x -lSDL_image -lSDL_mixer -lSDL_ttf -lSDL_inifile -lSDLmain -lSDL -lpng -ljpeg -lvorbisidec -lmad -lfreetype -lz -lunicodefont  
+OBJ  = win/main.o win/level.o win/game.o $(RES)
+LINKOBJ  = win/main.o win/level.o win/game.o $(RES)
+LIBS =  -L"C:/GP2XSDK/lib" -lmingw32 -liconv -lgp2x -ltiff -lSDL_image -lSDL_mixer -lSDL_ttf -lSDL_inifile -lSDLmain -lSDL -lpng -ljpeg -lvorbisidec -lmad -lfreetype -lz -lunicodefont  -lgmon -pg  -g3  
 INCS =  -I"C:/GP2XSDK/include/GP2X"  -I"C:/GP2XSDK/include/SDL"  -I"C:/GP2XSDK/include" 
 CXXINCS =  -I"C:/GP2XSDK/include/GP2X"  -I"C:/GP2XSDK/include/SDL"  -I"C:/GP2XSDK/lib/gcc/mingw32/3.4.2/include"  -I"C:/GP2XSDK/include/c++/3.4.2/backward"  -I"C:/GP2XSDK/include/c++/3.4.2/mingw32"  -I"C:/GP2XSDK/include/c++/3.4.2"  -I"C:/GP2XSDK/include" 
 BIN  = GuruLogic.exe
-CXXFLAGS = $(CXXINCS)   -DWIN32
-CFLAGS = $(INCS) -D_REENTRANT  -DWIN32
+CXXFLAGS = $(CXXINCS)   -DWIN32 -fverbose-asm -fexpensive-optimizations -O3 -pg -g3
+CFLAGS = $(INCS) -D_REENTRANT   -DWIN32 -fverbose-asm -fexpensive-optimizations -O3 -pg -g3
 RM = rm -f
 MKDIR = cygwin-mkdir -p
 
@@ -35,3 +35,6 @@ win/main.o: main.c
 
 win/level.o: level.c
 	$(CC) -c level.c -o win/level.o $(CFLAGS)
+
+win/game.o: game.c
+	$(CC) -c game.c -o win/game.o $(CFLAGS)
