@@ -1,7 +1,7 @@
 [Project]
 FileName=GuruLogic.dev
 Name=GuruLogic
-UnitCount=7
+UnitCount=9
 Type=1
 Ver=1
 ObjFiles=
@@ -109,6 +109,26 @@ BuildCmd=
 
 [Unit7]
 FileName=game.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit8]
+FileName=functions.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit9]
+FileName=functions.h
 CompileCpp=0
 Folder=
 Compile=1
