@@ -13,6 +13,10 @@ void RotateLeft90();
 void CheckAimTail();
 void DrawAimTail();
 
+int GetBlockCount();
+void ShootBlock();
+void RetractBlock();
+
 typedef struct
 {
    unsigned char rotated_left;

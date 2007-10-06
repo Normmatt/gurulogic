@@ -18,4 +18,31 @@ gCannon;
 
 extern gCannon Cannon;
 
+typedef struct
+{
+//   unsigned char Up;
+//   unsigned char Down;
+   unsigned char Left;
+   unsigned char Right;
+   unsigned char RotateLeft;
+   unsigned char RotateRight;
+   unsigned char Shoot;
+   unsigned char Retract;
+}
+gKeys;
+
+extern gKeys Keys;
+
+typedef struct
+{
+   unsigned char Stage;
+   unsigned char MaxBlocks;
+   unsigned char CurrentBlocks;
+   SDL_Surface* nfont;  
+   SDL_Surface* font;   
+}
+gVars;       
+
+extern gVars Vars;
+
 #endif

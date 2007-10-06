@@ -5,8 +5,8 @@ CPP  = g++.exe -D__DEBUG__
 CC   = gcc.exe -D__DEBUG__
 WINDRES = windres.exe
 RES  = 
-OBJ  = win/main.o win/level.o win/game.o $(RES)
-LINKOBJ  = win/main.o win/level.o win/game.o $(RES)
+OBJ  = win/main.o win/level.o win/game.o win/functions.o $(RES)
+LINKOBJ  = win/main.o win/level.o win/game.o win/functions.o $(RES)
 LIBS =  -L"C:/GP2XSDK/lib" -lmingw32 -liconv -lgp2x -ltiff -lSDL_image -lSDL_mixer -lSDL_ttf -lSDL_inifile -lSDLmain -lSDL -lpng -ljpeg -lvorbisidec -lmad -lfreetype -lz -lunicodefont  -lgmon -pg  -g3  
 INCS =  -I"C:/GP2XSDK/include/GP2X"  -I"C:/GP2XSDK/include/SDL"  -I"C:/GP2XSDK/include" 
 CXXINCS =  -I"C:/GP2XSDK/include/GP2X"  -I"C:/GP2XSDK/include/SDL"  -I"C:/GP2XSDK/lib/gcc/mingw32/3.4.2/include"  -I"C:/GP2XSDK/include/c++/3.4.2/backward"  -I"C:/GP2XSDK/include/c++/3.4.2/mingw32"  -I"C:/GP2XSDK/include/c++/3.4.2"  -I"C:/GP2XSDK/include" 
@@ -38,3 +38,6 @@ win/level.o: level.c
 
 win/game.o: game.c
 	$(CC) -c game.c -o win/game.o $(CFLAGS)
+
+win/functions.o: functions.c
+	$(CC) -c functions.c -o win/functions.o $(CFLAGS)

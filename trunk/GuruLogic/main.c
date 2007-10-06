@@ -11,6 +11,7 @@
 #include "level.h"
 #include "types.h"
 #include "defines.h"
+#include "functions.h"
 
 /* The screen surface, joystick device */
 SDL_Surface *screen = NULL;
@@ -40,15 +41,12 @@ int main (int argc, char *argv[])
 		fprintf (stderr, "Couldn't set 320x240x16 video mode: %s\n", SDL_GetError ());
 		exit (2);
 	}
+	
+	SDL_WM_SetCaption ("GuruLogic", NULL);
 
 #ifdef WIN32
 	/* Only use Windows code here */
 #endif
-
-    /*InitLevel("test.map","blocks.png");
-    RotateRight90();
-    RotateRight90();
-	DrawLevel();*/
 
 	GameMain();
 
