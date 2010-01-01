@@ -13,25 +13,31 @@
 #include "defines.h"
 #include "functions.h"
 
-gKeys    Keys;
-gVars    Vars;
-gCannon  Cannon;
+gKeys       Keys;
+gVars       Vars;
+gCannon     Cannon;
+gTime       gmTime;
 
-void GameMain()
+void GameMain(char *level)
 {
     int i = 0;
     int done = 0;
     char temp[256];
     
-    InitLevel("test.map","blocks.png");
+    InitLevel(level,"blocks.png");
     Vars.Stage = 1;
-    Vars.MaxBlocks = GetBlockCount();
-    Vars.CurrentBlocks = Vars.MaxBlocks;
+    Vars.MaxBlocks = GetBlockCount(TYPE_WHITE) - GetBlockCount(TYPE_BLUEROLL)  - GetBlockCount(TYPE_REDROLL);
+    Vars.CurrentBlocks = GetBlockCount(TYPE_RED);
+    if(Vars.CurrentBlocks==0)
+    {
+      Vars.CurrentBlocks = Vars.MaxBlocks;
+    } else {
+      Vars.CurrentBlocks = GetBlockCount(TYPE_WHITE) - GetBlockCount(TYPE_RED);   
+    }
     
     Vars.nfont = SDL_DisplayFormat(IMG_Load("sprites/numbers.png"));
     if(SDL_SetColorKey(Vars.nfont, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(Vars.nfont->format, 255, 0, 255)) == -1)
     fprintf(stderr, "Warning: colorkey will not be used, reason: %s\n", SDL_GetError());
-
     
     Cannon.Surface = SDL_DisplayFormat(IMG_Load("sprites/champ_gun.png"));
     if(SDL_SetColorKey(Cannon.Surface, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(Cannon.Surface->format, 255, 0, 255)) == -1)
@@ -50,6 +56,11 @@ void GameMain()
     if(SDL_SetColorKey(Cannon.AimTailSurface, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(Cannon.AimTailSurface->format, 255, 0, 255)) == -1)
     fprintf(stderr, "Warning: colorkey will not be used, reason: %s\n", SDL_GetError());
 
+    Vars.Minimap = SDL_DisplayFormat(IMG_Load("sprites/minimap_on.png"));
+    if(SDL_SetColorKey(Vars.Minimap, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(Vars.Minimap->format, 255, 0, 255)) == -1)
+    fprintf(stderr, "Warning: colorkey will not be used, reason: %s\n", SDL_GetError());
+ 
+    /* Reset all 16 AimRects to default values */
     for(i=0; i<16; i++)
     {
     	Cannon.AimRect[i].x = 152;//96;
@@ -57,6 +68,9 @@ void GameMain()
     	Cannon.AimRect[i].w = 8;
     	Cannon.AimRect[i].h = 8;
     }
+    
+    /* Reset timer values to default */
+    memset(&gmTime,0,sizeof(gTime));
     
     done = 0;
 	while (!done)
@@ -125,61 +139,79 @@ void GameMain()
                     }
                     break;
 				case SDL_QUIT:
-					done = 1;
+					done = 2;
 					break;
 				default:
 					break;
 			}
 		}
+		#define KEY_WAIT 4
 		
 		/* Handle Key Input */
 		if(Keys.RotateLeft)
         {
-			Board.rotated_left ^= 1;
-        	RotateLeft90(); 
-        	SDL_Delay(150); //Delay because its too quick
+        	if(Keys.RotateLeft==KEY_WAIT) 
+            {
+			    RotateLeft90(); 
+        	    Keys.RotateLeft=0;
+            }
+            Keys.RotateLeft++;
         }
         
         if(Keys.RotateRight)
         {
-			Board.rotated_right ^= 1;
-        	RotateRight90();
-            SDL_Delay(150); //Delay because its too quick
+        	if(Keys.RotateRight==KEY_WAIT)
+            {
+			    RotateRight90();
+        	    Keys.RotateRight=0;
+            }
+            Keys.RotateRight++;
         }
         
         if(Keys.Left)
         {
-			Cannon.Rect.x -= 8;
-            if(Cannon.Rect.x < 80) Cannon.Rect.x = 80; 
-            SDL_Delay(150); //Delay because its too quick
+            if(Keys.Left==KEY_WAIT)
+            {
+			    Cannon.Rect.x -= 8;
+                if(Cannon.Rect.x < 80) Cannon.Rect.x = 80; 
+                Keys.Left=0;
+            }
+            Keys.Left++;
         }
         
         if(Keys.Right)
         {
-			Cannon.Rect.x += 8;
-            if(Cannon.Rect.x > 200) Cannon.Rect.x = 200; 
-            SDL_Delay(150); //Delay because its too quick
+            if(Keys.Right==KEY_WAIT)
+            {
+			    Cannon.Rect.x += 8;
+			    if(Cannon.Rect.x > 200) Cannon.Rect.x = 200; 
+			    Keys.Right=0;
+            }
+            Keys.Right++;
         }
 		
 		if(Keys.Shoot)
         {
-            //TODO
-            ShootBlock();
-            SDL_Delay(150); //Delay because its too quick
+            if(Keys.Shoot==KEY_WAIT)
+            {
+			    ShootBlock();
+        	    Keys.Shoot=0;
+            }
+            Keys.Shoot++;
         }
         
         if(Keys.Retract)
         {
-            //TODO
-            RetractBlock();
-            SDL_Delay(150); //Delay because its too quick
+            if(Keys.Retract==KEY_WAIT)
+            {
+			    RetractBlock();
+        	    Keys.Retract=0;
+            }
+            Keys.Retract++;
         }
         
 		/* Clear Screen */
 		SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 255,0,255));
-		
-		/* Get current number of blocks */
-		//Vars.CurrentBlocks = GetBlockCount();
 		
 		/* Draw Level */
 		DrawLevel();
@@ -187,15 +219,40 @@ void GameMain()
 		/* Draw Cannon on the screen */
 		SDL_BlitSurface(Cannon.Surface, 0, screen, &Cannon.Rect);
 		
+		/* Set up the Aim */
+		CheckAimTail();
+		
 		/* Draw the Aim onto the screen */
 		DrawAimTail();
+		
+		/* Update Timer */
+		if(gmTime.mSeconds==60) //Check if mSeconds timer equals one second
+        { 
+            gmTime.Seconds++;  //Update Seconds timer
+            gmTime.mSeconds=0; //Reset mSeconds timer
+        } else {
+            gmTime.mSeconds++; //Update mSeconds timer
+            SDL_Delay(17);     //Delay it for approx 1ms
+        }
+		if(gmTime.Seconds==60) //Check if Seconds timer equals one Minute
+        { 
+            gmTime.Minutes++;  //Update Minutes timer
+            gmTime.Seconds=0;  //Reset Seconds timer    
+        }
+		if(gmTime.Minutes==60) //Check if Minutes timer equals one Hour
+		{ 
+            gmTime.Hours++;    //Update Hours timer
+            gmTime.Minutes=0;  //Reset Minutes timer 
+            
+            //TODO: Add Times up screen    
+        }
 		
 		/* Draw stage number to screen*/
 		sprintf(temp,"%02d",Vars.Stage);
 		drawText8x8(Vars.nfont,screen,temp,56,8);
 		
 		/* Draw timer to screen*/
-		sprintf(temp,"%02d'%02d\"%02d",0,0,0);
+		sprintf(temp,"%02d'%02d\"%02d",gmTime.Minutes,gmTime.Seconds,gmTime.mSeconds);
 		drawText8x8(Vars.nfont,screen,temp,8,96);
 		
 		/* Draw best time to screen*/
@@ -214,7 +271,7 @@ void GameMain()
 		SDL_Flip(screen);
 		
 		/* Check if won */
-		if(GetBlockCount()==0) //You win
+		if((GetBlockCount(TYPE_WHITE)==0) && (Vars.CurrentBlocks==0)) //You win
 		{
            /* Clear Screen */
 		   //SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 255,0,255)); 
@@ -233,6 +290,7 @@ void GameMain()
            /* Break out of loop */
            done = 1;                 
         }
+
 	}
 	
 	SDL_FreeSurface(Cannon.Surface);
@@ -241,4 +299,7 @@ void GameMain()
 	SDL_FreeSurface(Vars.nfont);
 	SDL_FreeSurface(Vars.font);
 	SDL_FreeSurface(screen);
+	
+	if(done == 2) exit(1);
 }
+

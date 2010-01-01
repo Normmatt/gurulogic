@@ -1,7 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
-void GameMain();
+void GameMain(char *level);
 
 typedef struct
 {
@@ -35,11 +35,24 @@ extern gKeys Keys;
 
 typedef struct
 {
+   unsigned char mSeconds;
+   unsigned char Seconds;  
+   unsigned char Minutes;
+   unsigned char Hours;
+}
+gTime; 
+
+extern gTime gmTime;
+
+typedef struct
+{
    unsigned char Stage;
    unsigned char MaxBlocks;
    unsigned char CurrentBlocks;
    SDL_Surface* nfont;  
-   SDL_Surface* font;   
+   SDL_Surface* font; 
+   SDL_Surface* Minimap; 
+   //gTime gmTime;  
 }
 gVars;       
 

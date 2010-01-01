@@ -5,4 +5,6 @@
 extern SDL_Surface *screen;
 extern SDL_Joystick *joy;
 
+extern void Terminate(void);
+
 #endif

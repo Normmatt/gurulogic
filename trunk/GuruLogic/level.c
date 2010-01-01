@@ -15,10 +15,9 @@
 
 u8 tile[256];
 u8 btile[256];
-u8 rotTile[256];
+u8 mmap[256];
 SDL_Surface* tileset;
 SDL_Surface* background;
-gBoard Board;
 
 void ReadMapFile(char *filename)
 {
@@ -26,6 +25,7 @@ void ReadMapFile(char *filename)
      map = fopen(filename,"rb");
      fread(tile, 256, 1, map);
      memcpy(btile,tile,256);
+     memcpy(mmap,tile,256);
      fclose(map);
 }
 
@@ -68,58 +68,40 @@ void InitLevel(char* map_name, char* tileset_name)
      LoadTileset(temp);
 }
 
-void RotateRight90()
-{
-     int i, j;
-     memset(rotTile,0,256);
-     
-     if(Board.rotated_right)
-     {
-          for (i=0; i<16; i++) {
-               for (j=0; j<16; j++) {
-                    rotTile[i*16+j] = tile[j*16+i];
-               }
-          }
-     }
-     else
-     {
-          for (i=0; i<16; i++) {
-               for (j=0; j<16; j++) {
-                    rotTile[i*16+j] = tile[(16*16)-1-(j*16+i)];
-               }
-          }
-     }
-     
-     memset(tile,0,256);
-     memcpy(tile,rotTile,256);
-     memcpy(btile,tile,256);
-}
-
 void RotateLeft90()
 {
      int i, j;
-     memset(rotTile,0,256);
+     u8 *rotTile;
+     rotTile = malloc(256*2 + 1);
      
-     if(Board.rotated_left)
-     {
-          for (i=0; i<16; i++) {
-               for (j=0; j<16; j++) {
-                    rotTile[i*16+j] = tile[(16*16)-1-(j*16+i)];
-               }
-          }
-     }
-     else
-     {
-          for (i=0; i<16; i++) {
-               for (j=0; j<16; j++) {
-                    rotTile[i*16+j] = tile[j*16+i];
-               }
+     for (i=0; i<16; i++) {
+          for (j=0; j<16; j++) {
+               rotTile[i*16+j] = tile[(j*16+(15-i))];
+               rotTile[256+(i*16+j)] = btile[(j*16+(15-i))];
           }
      }
      
-     memset(tile,0,256);
      memcpy(tile,rotTile,256);
-     memcpy(btile,tile,256);
+     memcpy(btile,rotTile+256,256);
+     free(rotTile);
+}
+
+void RotateRight90()
+{
+     int i, j;
+     u8 *rotTile;
+     rotTile = malloc(256*2 + 1);
+     
+     for (i=0; i<16; i++) {
+          for (j=0; j<16; j++) {
+               rotTile[i*16+j] = tile[((15-j)*16+i)];
+               rotTile[256+(i*16+j)] = btile[((15-j)*16+i)];
+          }
+     }
+     
+     memcpy(tile,rotTile,256);
+     memcpy(btile,rotTile+256,256);
+     free(rotTile);
 }
 
 void CheckAimTail()
@@ -127,18 +109,28 @@ void CheckAimTail()
      int y=0;
      int x=(((Cannon.Rect.x + 16)-96)/8);
      int j=0;
+     int i=0;
+     
+     for (i=0; i<16; i++) Cannon.AimTailOn[i] = 0;
+     Cannon.HeadRect = 0;
      
      //for (y=0; y<16; y++) {
-     for (y=16; y!=0; y--) {
+     for (y=16; y--;) {
          if( (tile[(y*16+x)]==0) || (tile[(y*16+x)]==1) )
          {
               Cannon.AimTailOn[j] = 1;
               Cannon.AimRect[j].x = Cannon.Rect.x + 16; 
-              Cannon.AimRect[j].y = /*(16*8)-*/((y)*8);
+              Cannon.AimRect[j].y = /*(16*8)-*/((y+1)*8);
+              //printf("Cannon.AimRect[%d].x = %d\n",j,Cannon.AimRect[j].x);
+              //printf("Cannon.AimRect[%d].y = %d\n",j,Cannon.AimRect[j].y);
               j++;
          } else {
-              Cannon.AimTailOn[j-1] = 2;  
-              Cannon.HeadRect = j-1;
+              Cannon.AimTailOn[j] = 2; 
+              Cannon.AimRect[j].x = Cannon.Rect.x + 16; 
+              Cannon.AimRect[j].y = /*(16*8)-*/((y+1)*8); 
+              Cannon.HeadRect = j;  
+              //printf("Cannon.AimRect[Cannon.HeadRect].x = %d\n",Cannon.AimRect[Cannon.HeadRect].x);
+              //printf("Cannon.AimRect[Cannon.HeadRect].y = %d\n",Cannon.AimRect[Cannon.HeadRect].y);
               break;
          }
      }
@@ -148,10 +140,6 @@ void CheckAimTail()
 void DrawAimTail()
 {
      int i=0;
-     
-     for (i=0; i<16; i++) Cannon.AimTailOn[i] = 0;
-     
-     CheckAimTail();
      
      i=0;
      while(Cannon.AimTailOn[i]!=0)
@@ -167,14 +155,14 @@ void DrawAimTail()
      }
 }
 
-int GetBlockCount()
+int GetBlockCount(int type)
 {
      int i=0;
      int temp=0;
      
      for(i=0; i<256; i++)
      {
-         if(tile[i]==1) temp++;
+         if(tile[i]==type) temp++;
      }
      
      return temp;
@@ -185,54 +173,131 @@ void ShootBlock()
      int x=((Cannon.AimRect[Cannon.HeadRect].x)-96)/8;
      int y=(Cannon.AimRect[Cannon.HeadRect].y)/8;
      
-     printf("Cannon.AimRect[Cannon.HeadRect].x = %d\n",Cannon.AimRect[Cannon.HeadRect].x);
-     printf("Cannon.AimRect[Cannon.HeadRect].y = %d\n",Cannon.AimRect[Cannon.HeadRect].y);
-     printf("X=%d \t Y=%d\n",x,y);
-
-     if((tile[(y*16+x)]!=0) && (Vars.CurrentBlocks!=0))//Shoot
+     //printf("Cannon.AimRect[Cannon.HeadRect].x = %d\n",Cannon.AimRect[Cannon.HeadRect].x);
+     //printf("Cannon.AimRect[Cannon.HeadRect].y = %d\n",Cannon.AimRect[Cannon.HeadRect].y);
+     //printf("X=%d \t Y=%d\n",x,y);
+     if((y!=16) && (tile[(y*16+x)]==TYPE_BOUNCE) || (tile[((y-1)*16+x)]==TYPE_BOUNCE)) 
+         return; //TODO: Add bounce animations
+     
+     /*if((y!=16) && (tile[(y*16+x)]==TYPE_REDROLL))
      {
-           if(tile[(y*16+x)]==1) 
-           {
-               if(btile[(y*16+x)]!=1) 
-                tile[(y*16+x)]=4; //Set it to blue block 
-               else
-                tile[(y*16+x)]=3; //Set it to red block  
-               Vars.CurrentBlocks--;
-           }                   
-     } else {
+         if(tile[((y-2)*16+x)]==TYPE_WHITE)
+         {
+             tile[((y-2)*16+x)] = TYPE_BLUEROLL;
+         } else {
+             tile[((y-2)*16+x)] = TYPE_REDROLL; 
+         }
+               
+         tile[(y*16+x)] =  btile[(y*16+x)] = TYPE_BLANK; 
+         tile[((y+1)*16+x)] = TYPE_RED; 
+         return;       
+     }*/
+     if((y!=16) && (tile[((y-1)*16+x)]==TYPE_REDROLL) && (tile[((y-2)*16+x)]!=TYPE_WALL))
+     {
+         if(tile[((y-2)*16+x)]>=TYPE_WHITE)
+         {
+             tile[((y-2)*16+x)] = TYPE_BLUEROLL;
+         } else {
+             tile[((y-2)*16+x)] = TYPE_REDROLL; 
+         }
+               
+         tile[((y-1)*16+x)] =  btile[((y-1)*16+x)] = TYPE_BLANK; 
+         
+         if(tile[(y*16+x)]!=TYPE_WHITE) 
+         {
+               tile[(y*16+x)]=TYPE_RED; //Set it to red block 
+         } else {
+               tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block 
+         } 
+         Vars.CurrentBlocks--;
+         return;   
+     }
+     
+     if((y!=16) && (tile[((y-1)*16+x)]==TYPE_BLUEROLL)  && (tile[((y-2)*16+x)]==TYPE_WALL))
+     {
+         if(tile[((y+1)*16+x)]!=TYPE_WHITE) 
+         {
+               tile[((y+1)*16+x)]=TYPE_RED; //Set it to red block 
+         } else {
+               tile[((y+1)*16+x)]=TYPE_BLUE; //Set it to blue block 
+         }        
+     }
+     
+     if((y!=16) && (tile[((y-1)*16+x)]==TYPE_BLUEROLL) && (tile[((y-2)*16+x)]!=TYPE_WALL))
+     {
+         if(tile[((y-2)*16+x)]>=TYPE_WHITE)
+         {
+             tile[((y-2)*16+x)] = TYPE_BLUEROLL;
+         } else {
+             tile[((y-2)*16+x)] = TYPE_REDROLL; 
+         }
+               
+         if(btile[((y-1)*16+x)]==TYPE_WHITE) 
+          tile[((y-1)*16+x)] = TYPE_WHITE; 
+         else
+          tile[((y-1)*16+x)] = TYPE_BLANK; 
+          
+         if(btile[((y-1)*16+x)]==TYPE_WHITE) 
+          btile[((y-1)*16+x)] = TYPE_WHITE; 
+         else
+          btile[((y-1)*16+x)] = TYPE_BLANK;
+         
+         if(tile[(y*16+x)]!=TYPE_WHITE) 
+         {
+               tile[(y*16+x)]=TYPE_RED; //Set it to red block 
+         } else {
+               tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block 
+         } 
+         Vars.CurrentBlocks--;
+         return;       
+     }
+
+     /*if((y!=16) && (tile[(y*16+x)]!=TYPE_BLANK) && (Vars.CurrentBlocks!=0))//Shoot
+     {
+         if(tile[(y*16+x)]==TYPE_WHITE) 
+         {
+             if(btile[(y*16+x)]!=TYPE_WHITE) 
+               tile[(y*16+x)]=TYPE_RED; //Set it to red block 
+             else
+               tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block  
+             Vars.CurrentBlocks--;
+         }                   
+     } else {*/
+           /* Commented out because it it broke things alot, left here just in case
            /*if( (Vars.CurrentBlocks!=0) && (tile[(y*16+(x+1))]!=0) )
            {
                if(btile[(y*16+x)]!=1) 
-                tile[(y*16+x)]=4; //Set it to blue block 
+                tile[(y*16+x)]=TYPE_RED; //Set it to red block 
                else
-                tile[(y*16+x)]=3; //Set it to red block 
+                tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block 
                Vars.CurrentBlocks--;
            } 
            if( (Vars.CurrentBlocks!=0) && (tile[(y*16+(x-1))]!=0) )
            {
                if(btile[(y*16+x)]!=1) 
-                tile[(y*16+x)]=4; //Set it to blue block 
+                tile[(y*16+x)]=TYPE_RED; //Set it to red block 
                else
-                tile[(y*16+x)]=3; //Set it to red block  
+                tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block  
                Vars.CurrentBlocks--;
            } */
-           if( (Vars.CurrentBlocks!=0) && (tile[((y+1)*16+x)]!=0) )
+           /* Commented out because it broke Stage 10 of Rescue 1
+           /*if( (y!=16) && (Vars.CurrentBlocks!=0) && (tile[((y+1)*16+x)]!=0) )
            {
                if(btile[(y*16+x)]!=1) 
-                tile[(y*16+x)]=4; //Set it to blue block 
+                tile[(y*16+x)]=TYPE_RED; //Set it to red block 
                else
-                tile[(y*16+x)]=3; //Set it to red block 
+                tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block 
                Vars.CurrentBlocks--;
-           } 
-           if( (Vars.CurrentBlocks!=0) && (tile[((y-1)*16+x)]!=0) )
+           }*/ 
+           if( (y!=16) && (Vars.CurrentBlocks!=0) && (tile[((y-1)*16+x)]!=TYPE_BLANK) )
            {
-               if(btile[(y*16+x)]!=1) 
-                tile[(y*16+x)]=4; //Set it to blue block 
+               if(btile[(y*16+x)]!=TYPE_WHITE) 
+                tile[(y*16+x)]=TYPE_RED; //Set it to red block 
                else
-                tile[(y*16+x)]=3; //Set it to red block  
+                tile[(y*16+x)]=TYPE_BLUE; //Set it to blue block  
                Vars.CurrentBlocks--;
            } 
-     }
+     //}
 }
 
 void RetractBlock()
@@ -242,16 +307,35 @@ void RetractBlock()
      
      y--;
      
-     printf("Cannon.AimRect[Cannon.HeadRect].x = %d\n",Cannon.AimRect[Cannon.HeadRect].x);
-     printf("Cannon.AimRect[Cannon.HeadRect].y = %d\n",Cannon.AimRect[Cannon.HeadRect].y);
-     printf("X=%d \t Y=%d\n",x,y);
+     //printf("Cannon.AimRect[Cannon.HeadRect].x = %d\n",Cannon.AimRect[Cannon.HeadRect].x);
+     //printf("Cannon.AimRect[Cannon.HeadRect].y = %d\n",Cannon.AimRect[Cannon.HeadRect].y);
+     //printf("X=%d \t Y=%d\n",x,y);
 
-     if( (tile[(y*16+x)]==3) || (tile[(y*16+x)]==4) ) //Retract
+     if( (tile[(y*16+x)]==TYPE_BLUE) || (tile[(y*16+x)]==TYPE_RED) ) //Retract
      {
-          tile[(y*16+x)]=btile[(y*16+x)]; //Set it to original block 
-          Vars.CurrentBlocks++;                   
-     } else {
+         if(btile[(y*16+x)]==TYPE_RED)
+          tile[(y*16+x)]=TYPE_BLANK; //Set it to blank block
+         else
+          tile[(y*16+x)]=btile[(y*16+x)]; //Set it to original block          
+         Vars.CurrentBlocks++;                   
      }
+}
+
+void DrawMinimap()
+{
+     int i=0,j=0;
+          
+     for(i=0; i<16; i++)
+     {
+         for(j=0; j<16; j++)
+         {
+             if(mmap[(i*16+j)]!=0)
+             {
+                 drawTile(Vars.Minimap, screen, 0, 0, 8+(4*j), 16+(4*i), 4, 4);                     
+             }
+         }
+     }
+     
 }
 
 void DrawLevel()
@@ -259,6 +343,8 @@ void DrawLevel()
      int row,tile_no=0;
      
      SDL_BlitSurface(background, 0, screen, 0);
+     
+     DrawMinimap();
      
      //for(row=0; row<16; row++)
      for(row=16; row--;)
