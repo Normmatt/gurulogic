@@ -1,0 +1,1 @@
+The aim of this project is to remake the GBA game "Guru Guru Logic Champ" by the now defunct Compile. Using SDL and plain old ansi C.
